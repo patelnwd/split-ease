@@ -1,0 +1,33 @@
+{
+    "recommendations": [
+        // ── Language support ─────────────────────────────────────────────
+        "ms-vscode.vscode-typescript-next",
+        "yoavbls.pretty-ts-errors",
+
+        // ── Linting & formatting ─────────────────────────────────────────
+        "dbaeumer.vscode-eslint",
+        "esbenp.prettier-vscode",
+
+        // ── Spell check ──────────────────────────────────────────────────
+        "streetsidesoftware.code-spell-checker",
+
+        // ── Frontend / styling ───────────────────────────────────────────
+        "bradlc.vscode-tailwindcss",
+        "formulahendry.auto-rename-tag",
+
+        // ── Environment & config files ───────────────────────────────────
+        "mikestead.dotenv",
+
+        // ── Database ─────────────────────────────────────────────────────
+        "mtxr.sqltools",
+        "mtxr.sqltools-driver-pg",
+
+        // ── Developer experience ─────────────────────────────────────────
+        "usernamehw.errorlens",
+        "eamodio.gitlens",
+        "christian-kohler.path-intellisense",
+        "pkief.material-icon-theme",
+        "gruntfuggly.todo-tree"
+    ],
+    "unwantedRecommendations": []
+}

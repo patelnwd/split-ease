@@ -26,7 +26,11 @@ split-ease/
 │   └── frontend/         React SPA (Vite + TypeScript)
 ├── eslint.config.mjs     Shared ESLint flat config (TS + React)
 ├── .prettierrc
-├── .cspell.json          Project-specific spell-check words
+├── .vscode/
+│   ├── settings.json     Editor settings (format-on-save, ESLint, Tailwind, etc.)
+│   ├── extensions.json   Recommended VS Code extensions
+│   ├── launch.json       Debug configs for backend + tests
+│   └── cspell.json       Project-specific spell-check words
 └── package.json          Root workspace scripts
 ```
 
@@ -72,20 +76,20 @@ packages/frontend/src/
 
 ## Tech stack
 
-| Layer | Technology | Notes |
-|---|---|---|
-| Runtime | Node.js 20+ | ESM (`"type": "module"` in backend/package.json) |
-| API server | Fastify 4 | Plugins: cors, jwt, cookie, multipart, static |
-| ORM | Drizzle ORM 0.32 | PostgreSQL dialect; `drizzle-kit push` for schema sync |
-| Database | PostgreSQL 14+ | UUID primary keys via `crypto.randomUUID()` |
-| Auth | JWT in HTTP-only cookie | 7-day session; bcrypt cost 12 |
-| OAuth | Google + GitHub | PKCE state via JWT; account linking on email match |
-| Frontend | React 18 + Vite | TypeScript strict mode |
-| Routing | React Router 6 | Protected routes via `<ProtectedRoute>` |
-| Data fetching | TanStack Query v5 | All server state; `qc.invalidateQueries()` on mutations |
-| Forms | react-hook-form + Zod | Zod schema shared between form + API payload |
-| UI | Radix UI + Tailwind CSS | Component wrappers in `components/ui/` |
-| Package manager | pnpm 9 (workspaces) | Never use npm or yarn in this repo |
+| Layer           | Technology              | Notes                                                   |
+| --------------- | ----------------------- | ------------------------------------------------------- |
+| Runtime         | Node.js 20+             | ESM (`"type": "module"` in backend/package.json)        |
+| API server      | Fastify 4               | Plugins: cors, jwt, cookie, multipart, static           |
+| ORM             | Drizzle ORM 0.32        | PostgreSQL dialect; `drizzle-kit push` for schema sync  |
+| Database        | PostgreSQL 14+          | UUID primary keys via `crypto.randomUUID()`             |
+| Auth            | JWT in HTTP-only cookie | 7-day session; bcrypt cost 12                           |
+| OAuth           | Google + GitHub         | PKCE state via JWT; account linking on email match      |
+| Frontend        | React 18 + Vite         | TypeScript strict mode                                  |
+| Routing         | React Router 6          | Protected routes via `<ProtectedRoute>`                 |
+| Data fetching   | TanStack Query v5       | All server state; `qc.invalidateQueries()` on mutations |
+| Forms           | react-hook-form + Zod   | Zod schema shared between form + API payload            |
+| UI              | Radix UI + Tailwind CSS | Component wrappers in `components/ui/`                  |
+| Package manager | pnpm 9 (workspaces)     | Never use npm or yarn in this repo                      |
 
 ---
 
@@ -95,6 +99,7 @@ All variables are in `packages/backend/.env`. Validated at startup by Zod in `li
 If a required variable is missing the server will refuse to start with a clear message.
 
 **Required:**
+
 - `DATABASE_URL` — PostgreSQL connection string
 - `JWT_SECRET` — min 16 chars, not a placeholder
 - `FRONTEND_URL` — CORS origin + OAuth redirect base
@@ -110,18 +115,18 @@ Managed by Drizzle ORM. Push changes with `pnpm db:push` (dev) or `pnpm db:migra
 
 ### Tables
 
-| Table | Key columns | Notes |
-|---|---|---|
-| `users` | id, name, email, password (nullable), emailVerified, isAdmin, bannedUntil, oauthProvider, oauthId, currency | password is null for OAuth-only accounts |
-| `groups` | id, name, description, category (enum), createdById | category: HOME/TRIP/COUPLE/WORK/OTHER |
-| `group_members` | id, groupId, userId, role (ADMIN/MEMBER), joinedAt | unique(groupId, userId) |
-| `expenses` | id, description, amount, currency, date, category, splitType, groupId (nullable), paidById | |
-| `expense_participants` | id, expenseId, userId, amount, percentage, shares, settled | unique(expenseId, userId) |
-| `settlements` | id, amount, currency, date, fromUserId, toUserId, groupId (nullable) | fromUser pays toUser |
-| `friendships` | id, user1Id, user2Id | unique(user1Id, user2Id); stored with user1Id < user2Id lexicographically |
-| `activities` | id, type (enum), description, userId, expenseId?, settlementId? | audit log |
-| `custom_categories` | id, name, icon, color, userId | per-user custom expense categories |
-| `access_logs` | id, method, path, statusCode, duration, userId?, ip, userAgent | HTTP access log |
+| Table                  | Key columns                                                                                                 | Notes                                                                     |
+| ---------------------- | ----------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------- |
+| `users`                | id, name, email, password (nullable), emailVerified, isAdmin, bannedUntil, oauthProvider, oauthId, currency | password is null for OAuth-only accounts                                  |
+| `groups`               | id, name, description, category (enum), createdById                                                         | category: HOME/TRIP/COUPLE/WORK/OTHER                                     |
+| `group_members`        | id, groupId, userId, role (ADMIN/MEMBER), joinedAt                                                          | unique(groupId, userId)                                                   |
+| `expenses`             | id, description, amount, currency, date, category, splitType, groupId (nullable), paidById                  |                                                                           |
+| `expense_participants` | id, expenseId, userId, amount, percentage, shares, settled                                                  | unique(expenseId, userId)                                                 |
+| `settlements`          | id, amount, currency, date, fromUserId, toUserId, groupId (nullable)                                        | fromUser pays toUser                                                      |
+| `friendships`          | id, user1Id, user2Id                                                                                        | unique(user1Id, user2Id); stored with user1Id < user2Id lexicographically |
+| `activities`           | id, type (enum), description, userId, expenseId?, settlementId?                                             | audit log                                                                 |
+| `custom_categories`    | id, name, icon, color, userId                                                                               | per-user custom expense categories                                        |
+| `access_logs`          | id, method, path, statusCode, duration, userId?, ip, userAgent                                              | HTTP access log                                                           |
 
 ### Enums
 
@@ -189,6 +194,7 @@ The backend returns HTTP 409 with `error` and `netBalance` fields.
 
 **Do NOT** redistribute a removed member's expense shares to remaining members.
 Past expenses are immutable financial records. Retroactive redistribution would:
+
 - Create phantom debts (e.g. Carol owes ₹50 extra she never spent)
 - Destroy the audit trail
 - Break "EXACT" and "PERCENTAGE" split records
@@ -199,21 +205,21 @@ Past expenses are immutable financial records. Retroactive redistribution would:
 
 All routes are registered under `/api` prefix in `server.ts`.
 
-| Prefix | File | Auth |
-|---|---|---|
-| `/api/auth` | routes/auth.ts | mixed |
-| `/api/groups` | routes/groups.ts | ✓ |
-| `/api/expenses` | routes/expenses.ts | ✓ |
-| `/api/balances` | routes/balances.ts | ✓ |
-| `/api/settlements` | routes/settlements.ts | ✓ |
-| `/api/friends` | routes/friends.ts | ✓ |
-| `/api/users` | routes/users.ts | ✓ |
-| `/api/profile` | routes/profile.ts | ✓ |
-| `/api/activity` | routes/activity.ts | ✓ |
-| `/api/categories` | routes/categories.ts | ✓ |
-| `/api/access-logs` | routes/access-logs.ts | ✓ |
-| `/api/admin` | routes/admin.ts | admin only |
-| `/api/health` | server.ts inline | — |
+| Prefix             | File                  | Auth       |
+| ------------------ | --------------------- | ---------- |
+| `/api/auth`        | routes/auth.ts        | mixed      |
+| `/api/groups`      | routes/groups.ts      | ✓          |
+| `/api/expenses`    | routes/expenses.ts    | ✓          |
+| `/api/balances`    | routes/balances.ts    | ✓          |
+| `/api/settlements` | routes/settlements.ts | ✓          |
+| `/api/friends`     | routes/friends.ts     | ✓          |
+| `/api/users`       | routes/users.ts       | ✓          |
+| `/api/profile`     | routes/profile.ts     | ✓          |
+| `/api/activity`    | routes/activity.ts    | ✓          |
+| `/api/categories`  | routes/categories.ts  | ✓          |
+| `/api/access-logs` | routes/access-logs.ts | ✓          |
+| `/api/admin`       | routes/admin.ts       | admin only |
+| `/api/health`      | server.ts inline      | —          |
 
 ### Groups member endpoints
 
@@ -224,9 +230,11 @@ All routes are registered under `/api` prefix in `server.ts`.
 ### Friendship storage
 
 Stored with `user1Id < user2Id` (lexicographic). When reading:
+
 ```typescript
-const friend = f.user1Id === userId ? f.user2 : f.user1;  // NOT f.user1 when you are user1
+const friend = f.user1Id === userId ? f.user2 : f.user1; // NOT f.user1 when you are user1
 ```
+
 The ternary is easy to get backwards — note the correct form above.
 
 ---
@@ -256,9 +264,17 @@ Sending `Content-Type: application/json` with an empty body causes Fastify to re
 ### GroupMember shape
 
 The `GET /api/groups/:id` endpoint returns **flattened** member objects:
+
 ```typescript
-{ id: string; name: string; email: string; image: string | null; role: string }
+{
+    id: string;
+    name: string;
+    email: string;
+    image: string | null;
+    role: string;
+}
 ```
+
 where `id` is the **user's** UUID (not the `group_members` table row UUID).
 The backend explicitly maps `m.user.id → id` before returning.
 
@@ -282,11 +298,13 @@ dependent queries re-fetch.
 The backend uses Fastify's built-in pino logger with pino-pretty in development.
 
 Configuration in `server.ts`:
+
 - `singleLine: true` — all log fields on one line
 - `ignore: "pid,hostname"` — suppress noisy fields
 - Custom serializers: `req → { method, url }`, `res → { statusCode }`
 
 In development each request produces two log lines:
+
 ```
 INFO: incoming request {"reqId":"req-1","req":{"method":"GET","url":"/api/auth/me"}}
 INFO: request completed {"reqId":"req-1","res":{"statusCode":200},"responseTime":4.39}
@@ -298,21 +316,22 @@ INFO: request completed {"reqId":"req-1","res":{"statusCode":200},"responseTime"
 
 Run from the repo root unless noted.
 
-| Command | What it does |
-|---|---|
-| `pnpm dev` | Start backend + frontend in parallel |
-| `pnpm build` | Compile both packages |
-| `pnpm fix` | ESLint auto-fix + Prettier write (fix everything auto-fixable) |
-| `pnpm lint` | Type-check + ESLint (check only) |
-| `pnpm format` | Prettier check only |
-| `pnpm test` | Run backend Vitest suite |
-| `pnpm db:init` | Full DB setup: env check → create DB → push schema → seed |
-| `pnpm db:push` | Push schema changes to DB directly (no migration file) |
-| `pnpm db:generate` | Generate migration files from schema diff |
-| `pnpm db:migrate` | Apply migration files |
-| `pnpm db:studio` | Open Drizzle Studio (visual DB browser) |
+| Command            | What it does                                                   |
+| ------------------ | -------------------------------------------------------------- |
+| `pnpm dev`         | Start backend + frontend in parallel                           |
+| `pnpm build`       | Compile both packages                                          |
+| `pnpm fix`         | ESLint auto-fix + Prettier write (fix everything auto-fixable) |
+| `pnpm lint`        | Type-check + ESLint (check only)                               |
+| `pnpm format`      | Prettier check only                                            |
+| `pnpm test`        | Run backend Vitest suite                                       |
+| `pnpm db:init`     | Full DB setup: env check → create DB → push schema → seed      |
+| `pnpm db:push`     | Push schema changes to DB directly (no migration file)         |
+| `pnpm db:generate` | Generate migration files from schema diff                      |
+| `pnpm db:migrate`  | Apply migration files                                          |
+| `pnpm db:studio`   | Open Drizzle Studio (visual DB browser)                        |
 
 Backend-only (run from `packages/backend/`):
+
 - `pnpm test:watch` / `pnpm test:coverage`
 - `pnpm lint:fix` / `pnpm format:fix`
 
@@ -366,6 +385,7 @@ Backend tests use Vitest with a real PostgreSQL database (no mocks).
 Set `DATABASE_URL` to a test DB before running.
 
 Test files in `packages/backend/src/__tests__/`:
+
 - `auth.test.ts` — register, login, ban enforcement, OAuth flows
 - `admin.test.ts` — ban/unban, admin toggle, privilege escalation guards
 - `categories.test.ts` — custom category CRUD, ownership checks

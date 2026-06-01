@@ -1,0 +1,30 @@
+{
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "name": "Debug Backend",
+            "type": "node",
+            "request": "launch",
+            "runtimeExecutable": "${workspaceFolder}/node_modules/.bin/tsx",
+            "args": ["packages/backend/src/server.ts"],
+            "cwd": "${workspaceFolder}/packages/backend",
+            "envFile": "${workspaceFolder}/packages/backend/.env",
+            "sourceMaps": true,
+            "console": "integratedTerminal",
+            "skipFiles": ["<node_internals>/**", "**/node_modules/**"]
+        },
+        {
+            "name": "Debug Backend Tests",
+            "type": "node",
+            "request": "launch",
+            "runtimeExecutable": "${workspaceFolder}/node_modules/.bin/vitest",
+            "args": ["run", "--reporter=verbose"],
+            "cwd": "${workspaceFolder}/packages/backend",
+            "envFile": "${workspaceFolder}/packages/backend/.env",
+            "env": { "NODE_ENV": "test" },
+            "sourceMaps": true,
+            "console": "integratedTerminal",
+            "skipFiles": ["<node_internals>/**", "**/node_modules/**"]
+        }
+    ]
+}
