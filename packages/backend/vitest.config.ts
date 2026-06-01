@@ -1,0 +1,14 @@
+import { defineConfig } from "vitest/config";
+
+export default defineConfig({
+    test: {
+        environment: "node",
+        testTimeout: 30_000,
+        hookTimeout: 30_000,
+        globals: true,
+        reporters: ["verbose"],
+        // Run test files serially to avoid connection pool exhaustion
+        pool: "forks",
+        poolOptions: { forks: { singleFork: true } },
+    },
+});

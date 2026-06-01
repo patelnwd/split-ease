@@ -1,0 +1,144 @@
+{
+    // ── Editor ──────────────────────────────────────────────────────────────
+    "editor.tabSize": 4,
+    "editor.insertSpaces": true,
+    "editor.formatOnSave": true,
+    "editor.defaultFormatter": "esbenp.prettier-vscode",
+    "editor.rulers": [100],
+    "editor.wordWrap": "off",
+    "editor.linkedEditing": true,
+    "editor.bracketPairColorization.enabled": true,
+    "editor.stickyScroll.enabled": true,
+    "editor.suggest.preview": true,
+    "editor.inlayHints.enabled": "on",
+
+    // ── Files ────────────────────────────────────────────────────────────────
+    "files.eol": "\n",
+    "files.trimTrailingWhitespace": true,
+    "files.insertFinalNewline": true,
+    "files.encoding": "utf8",
+    "files.associations": {
+        "*.env": "dotenv",
+        "*.env.*": "dotenv",
+        "*.css": "tailwindcss"
+    },
+    "files.exclude": {
+        "**/node_modules": true,
+        "**/dist": true,
+        "**/.pnpm-store": true
+    },
+
+    // ── Search ───────────────────────────────────────────────────────────────
+    "search.exclude": {
+        "**/node_modules": true,
+        "**/dist": true,
+        "**/pnpm-lock.yaml": true
+    },
+
+    // ── TypeScript ───────────────────────────────────────────────────────────
+    "js/ts.tsdk.path": "node_modules/typescript/lib",
+    "js/ts.preferences.importModuleSpecifier": "relative",
+    "js/ts.preferences.quoteStyle": "double",
+    "js/ts.inlayHints.parameterNames.enabled": "literals",
+    "js/ts.inlayHints.variableTypes.enabled": false,
+    "js/ts.inlayHints.functionLikeReturnTypes.enabled": false,
+
+    // ── ESLint ───────────────────────────────────────────────────────────────
+    "eslint.useFlatConfig": true,
+    "eslint.validate": [
+        "typescript",
+        "typescriptreact",
+        "javascript",
+        "javascriptreact"
+    ],
+    "eslint.workingDirectories": [
+        { "directory": "packages/backend", "changeProcessCWD": true },
+        { "directory": "packages/frontend", "changeProcessCWD": true }
+    ],
+    "editor.codeActionsOnSave": {
+        "source.fixAll.eslint": "explicit"
+    },
+
+    // ── Prettier ─────────────────────────────────────────────────────────────
+    "[typescript]": {
+        "editor.defaultFormatter": "esbenp.prettier-vscode"
+    },
+    "[typescriptreact]": {
+        "editor.defaultFormatter": "esbenp.prettier-vscode"
+    },
+    "[javascript]": {
+        "editor.defaultFormatter": "esbenp.prettier-vscode"
+    },
+    "[json]": {
+        "editor.defaultFormatter": "esbenp.prettier-vscode"
+    },
+    "[jsonc]": {
+        "editor.defaultFormatter": "esbenp.prettier-vscode"
+    },
+    "[css]": {
+        "editor.defaultFormatter": "esbenp.prettier-vscode"
+    },
+    "[markdown]": {
+        "editor.defaultFormatter": "esbenp.prettier-vscode",
+        "editor.formatOnSave": true,
+        "files.trimTrailingWhitespace": false
+    },
+
+    // ── Tailwind CSS ─────────────────────────────────────────────────────────
+    "tailwindCSS.includeLanguages": {
+        "typescript": "javascript",
+        "typescriptreact": "javascriptreact"
+    },
+    "tailwindCSS.experimental.classRegex": [
+        ["cn\\(([^)]*)\\)", "[\"'`]([^\"'`]*).*?[\"'`]"],
+        ["cva\\(([^)]*)\\)", "[\"'`]([^\"'`]*).*?[\"'`]"]
+    ],
+
+    // ── Spell checker ─────────────────────────────────────────────────────────
+    "cSpell.configFile": "${workspaceFolder}/.vscode/cspell.json",
+
+    // ── Error Lens ───────────────────────────────────────────────────────────
+    "errorLens.enabledDiagnosticLevels": ["error", "warning"],
+    "errorLens.excludeBySource": ["cSpell"],
+
+    // ── GitLens ──────────────────────────────────────────────────────────────
+    "gitlens.codeLens.enabled": false,
+    "gitlens.currentLine.enabled": true,
+
+    // ── TODO Tree ────────────────────────────────────────────────────────────
+    "todo-tree.general.tags": ["TODO", "FIXME", "HACK", "NOTE", "BUG"],
+    "todo-tree.highlights.defaultHighlight": {
+        "foreground": "#fff",
+        "background": "#f59e0b",
+        "rulerColour": "#f59e0b",
+        "type": "tag"
+    },
+    "todo-tree.highlights.customHighlight": {
+        "FIXME": { "background": "#ef4444" },
+        "BUG":   { "background": "#dc2626" },
+        "NOTE":  { "background": "#3b82f6" }
+    },
+
+    // ── Terminal ─────────────────────────────────────────────────────────────
+    "terminal.integrated.env.linux": {
+        "FORCE_COLOR": "1"
+    },
+
+    // ── Material Icon Theme ──────────────────────────────────────────────────
+    "material-icon-theme.folders.associations": {
+        "routes":     "routes",
+        "db":         "database",
+        "lib":        "helper",
+        "contexts":   "context",
+        "hooks":      "hook",
+        "pages":      "views",
+        "components": "components",
+        "ui":         "ui"
+    },
+    "material-icon-theme.files.associations": {
+        "drizzle.config.ts": "database",
+        "vitest.config.ts":  "vitest",
+        "vite.config.ts":    "vite",
+        "*.schema.ts":       "database"
+    }
+}

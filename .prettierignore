@@ -1,0 +1,17 @@
+# Build outputs
+**/dist/**
+**/build/**
+**/.next/**
+**/coverage/**
+
+# Dependencies
+**/node_modules/**
+
+# Lock files (managed by the package manager)
+pnpm-lock.yaml
+package-lock.json
+yarn.lock
+
+# Generated / vendored
+**/drizzle/**
+**/*.sql
