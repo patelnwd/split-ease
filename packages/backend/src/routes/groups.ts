@@ -46,7 +46,18 @@ export default async function groupRoutes(server: FastifyInstance) {
             where: (g, { inArray }) => inArray(g.id, memberGroupIds),
             with: {
                 members: true,
-                expenses: { with: { participants: true, paidBy: true } },
+                expenses: {
+                    with: {
+                        participants: {
+                            with: {
+                                user: {
+                                    columns: { id: true, name: true, email: true, image: true },
+                                },
+                            },
+                        },
+                        paidBy: true,
+                    },
+                },
                 settlements: { with: { fromUser: true, toUser: true } },
             },
             orderBy: (g, { desc }) => [desc(g.updatedAt)],
@@ -164,9 +175,18 @@ export default async function groupRoutes(server: FastifyInstance) {
             const isMember = group.members.some((m) => m.userId === userId);
             if (!isMember) return reply.code(403).send({ error: "Forbidden" });
 
-            const memberUsers = group.members.map((m) => m.user);
-            const simplifiedDebts = simplifyDebts(group.expenses, group.settlements, memberUsers);
-            return { ...group, simplifiedDebts };
+            const simplifiedDebts = simplifyDebts(group.expenses, group.settlements);
+
+            // Flatten groupMember rows → { id, name, email, image, role } expected by frontend
+            const members = group.members.map((m) => ({
+                id: m.user.id,
+                name: m.user.name,
+                email: m.user.email,
+                image: m.user.image,
+                role: m.role,
+            }));
+
+            return { ...group, members, simplifiedDebts };
         },
     );
 
@@ -300,6 +320,49 @@ export default async function groupRoutes(server: FastifyInstance) {
                 .limit(1);
             if (!requester || (requester.role !== "ADMIN" && req.user.id !== userId)) {
                 return reply.code(403).send({ error: "Forbidden" });
+            }
+
+            // Block removal if the member has an unsettled balance in this group.
+            // Past expenses must remain unchanged — the correct flow is settle first, then remove.
+            const memberExpenseIds = db
+                .select({ expenseId: expenseParticipants.expenseId })
+                .from(expenseParticipants)
+                .where(eq(expenseParticipants.userId, userId));
+
+            const [groupExpenses, groupSettlements] = await Promise.all([
+                db.query.expenses.findMany({
+                    where: (e, { and: qAnd, or: qOr, eq: qEq, inArray: qIn }) =>
+                        qAnd(
+                            qEq(e.groupId, id),
+                            qOr(qEq(e.paidById, userId), qIn(e.id, memberExpenseIds)),
+                        ),
+                    with: {
+                        participants: {
+                            with: {
+                                user: { columns: { id: true, name: true, email: true, image: true } },
+                            },
+                        },
+                        paidBy: true,
+                    },
+                }),
+                db.query.settlements.findMany({
+                    where: (s, { and: qAnd, or: qOr, eq: qEq }) =>
+                        qAnd(qEq(s.groupId, id), qOr(qEq(s.fromUserId, userId), qEq(s.toUserId, userId))),
+                    with: { fromUser: true, toUser: true },
+                }),
+            ]);
+
+            const balances = calculateUserBalances(groupExpenses, groupSettlements, userId);
+            const netBalance = Math.round(
+                balances.reduce((s, b) => s + b.amount, 0) * 100,
+            ) / 100;
+
+            if (Math.abs(netBalance) > 0.01) {
+                const owes = netBalance < 0;
+                return reply.code(409).send({
+                    error: `Cannot remove: this member ${owes ? "owes" : "is owed"} ₹${Math.abs(netBalance).toFixed(2)} in this group. Settle up first, then remove.`,
+                    netBalance,
+                });
             }
 
             await db

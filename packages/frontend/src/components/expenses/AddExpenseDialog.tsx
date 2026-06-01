@@ -25,7 +25,7 @@ import {
     DialogTrigger,
 } from "@/components/ui/dialog";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
-import { getInitials } from "@/lib/utils";
+import { formatCurrency, getInitials } from "@/lib/utils";
 import { api } from "@/lib/api";
 import { toast } from "@/hooks/use-toast";
 import type { GroupMember, CustomCategory } from "@/types";
@@ -116,6 +116,34 @@ export function AddExpenseDialog({ groupId, members = [], onAdded, trigger }: Pr
     }, [open, user]);
 
     async function onSubmit(data: FormValues) {
+        if (splitType === "EXACT") {
+            const sum = participantIds.reduce(
+                (s, id) => s + parseFloat(exactAmounts[id] ?? "0"),
+                0,
+            );
+            if (Math.abs(sum - data.amount) > 0.01) {
+                toast({
+                    variant: "destructive",
+                    title: `Exact amounts must sum to ${formatCurrency(data.amount, user?.currency ?? "INR")} (currently ${formatCurrency(sum, user?.currency ?? "INR")})`,
+                });
+                return;
+            }
+        }
+
+        if (splitType === "PERCENTAGE") {
+            const sum = participantIds.reduce(
+                (s, id) => s + parseFloat(exactAmounts[id] ?? "0"),
+                0,
+            );
+            if (Math.abs(sum - 100) > 0.01) {
+                toast({
+                    variant: "destructive",
+                    title: `Percentages must sum to 100% (currently ${sum.toFixed(1)}%)`,
+                });
+                return;
+            }
+        }
+
         const participants = participantIds.map((userId) => {
             if (splitType === "EXACT")
                 return { userId, amount: parseFloat(exactAmounts[userId] ?? "0") };
@@ -300,11 +328,11 @@ export function AddExpenseDialog({ groupId, members = [], onAdded, trigger }: Pr
                                                 <span>{m.name}</span>
                                                 {isSelected && splitType === "EQUAL" && (
                                                     <span className="ml-auto text-xs text-muted-foreground">
-                                                        $
-                                                        {(
+                                                        {formatCurrency(
                                                             (amount || 0) /
-                                                            Math.max(participantIds.length, 1)
-                                                        ).toFixed(2)}
+                                                                Math.max(participantIds.length, 1),
+                                                            user?.currency ?? "INR",
+                                                        )}
                                                     </span>
                                                 )}
                                             </button>

@@ -67,31 +67,54 @@ function computeAmounts(
     total: number,
     participants: z.infer<typeof participantSchema>[],
 ) {
+    // Work in integer cents throughout to avoid floating-point drift,
+    // then distribute any remainder (from floor rounding) to the first N participants.
+    const totalCents = Math.round(total * 100);
+
     if (splitType === "EQUAL") {
-        const share = total / participants.length;
-        return participants.map((p) => ({
+        const base = Math.floor(totalCents / participants.length);
+        const remainder = totalCents - base * participants.length;
+        return participants.map((p, i) => ({
             userId: p.userId,
-            amount: Math.round(share * 100) / 100,
+            amount: (i < remainder ? base + 1 : base) / 100,
         }));
     }
+
     if (splitType === "EXACT") {
         return participants.map((p) => ({ userId: p.userId, amount: p.amount ?? 0 }));
     }
+
     if (splitType === "PERCENTAGE") {
-        return participants.map((p) => ({
+        const raw = participants.map((p) => ({
             userId: p.userId,
-            amount: Math.round(((p.percentage ?? 0) / 100) * total * 100) / 100,
+            cents: Math.floor(((p.percentage ?? 0) / 100) * totalCents),
+            percentage: p.percentage,
+        }));
+        const distributed = raw.reduce((s, p) => s + p.cents, 0);
+        const remainder = totalCents - distributed;
+        return raw.map((p, i) => ({
+            userId: p.userId,
+            amount: (i < remainder ? p.cents + 1 : p.cents) / 100,
             percentage: p.percentage,
         }));
     }
+
     if (splitType === "SHARES") {
         const totalShares = participants.reduce((s, p) => s + (p.shares ?? 1), 0);
-        return participants.map((p) => ({
+        const raw = participants.map((p) => ({
             userId: p.userId,
-            amount: Math.round(((p.shares ?? 1) / totalShares) * total * 100) / 100,
+            cents: Math.floor(((p.shares ?? 1) / totalShares) * totalCents),
+            shares: p.shares ?? 1,
+        }));
+        const distributed = raw.reduce((s, p) => s + p.cents, 0);
+        const remainder = totalCents - distributed;
+        return raw.map((p, i) => ({
+            userId: p.userId,
+            amount: (i < remainder ? p.cents + 1 : p.cents) / 100,
             shares: p.shares ?? 1,
         }));
     }
+
     return [];
 }
 
@@ -218,7 +241,7 @@ export default async function expenseRoutes(server: FastifyInstance) {
 
         await db.insert(activities).values({
             type: "EXPENSE_ADDED",
-            description: `Added "${data.description}" ($${data.amount.toFixed(2)})`,
+            description: `Added "${data.description}" (${data.currency} ${data.amount.toFixed(2)})`,
             userId,
             expenseId: expense.id,
         });
@@ -296,7 +319,7 @@ export default async function expenseRoutes(server: FastifyInstance) {
 
         await db.insert(activities).values({
             type: "EXPENSE_UPDATED",
-            description: `Updated "${updated.description}" ($${updated.amount.toFixed(2)})`,
+            description: `Updated "${updated.description}" (${updated.currency} ${updated.amount.toFixed(2)})`,
             userId: req.user.id,
             expenseId: id,
         });

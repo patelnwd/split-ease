@@ -88,7 +88,7 @@ export function DashboardPage() {
                             </CardTitle>
                         </CardHeader>
                         <CardContent>
-                            <p className={`text-2xl font-bold ${color}`}>{formatCurrency(value)}</p>
+                            <p className={`text-2xl font-bold ${color}`}>{formatCurrency(value, user?.currency ?? "INR")}</p>
                         </CardContent>
                     </Card>
                 ))}
@@ -119,8 +119,8 @@ export function DashboardPage() {
                                         className={`text-xs ${b.amount > 0 ? "text-green-600" : "text-red-500"}`}
                                     >
                                         {b.amount > 0
-                                            ? `owes you ${formatCurrency(b.amount)}`
-                                            : `you owe ${formatCurrency(Math.abs(b.amount))}`}
+                                            ? `owes you ${formatCurrency(b.amount, user?.currency ?? "INR")}`
+                                            : `you owe ${formatCurrency(Math.abs(b.amount), user?.currency ?? "INR")}`}
                                     </p>
                                 </div>
                                 {b.amount < 0 && (
@@ -165,11 +165,12 @@ export function DashboardPage() {
                                 <p
                                     className={`text-sm font-medium ${g.myBalance > 0 ? "text-green-600" : g.myBalance < 0 ? "text-red-500" : "text-muted-foreground"}`}
                                 >
-                                    {g.myBalance > 0
-                                        ? `+${formatCurrency(g.myBalance)}`
-                                        : g.myBalance < 0
-                                          ? formatCurrency(g.myBalance)
-                                          : "settled"}
+                                    {(() => {
+                                        const cur = user?.currency ?? "INR";
+                                        if (g.myBalance > 0) return `+${formatCurrency(g.myBalance, cur)}`;
+                                        if (g.myBalance < 0) return formatCurrency(g.myBalance, cur);
+                                        return "settled";
+                                    })()}
                                 </p>
                             </Link>
                         ))}

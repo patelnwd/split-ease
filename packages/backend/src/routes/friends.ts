@@ -29,7 +29,14 @@ export default async function friendRoutes(server: FastifyInstance) {
             db.query.expenses.findMany({
                 where: (e, { or, eq, inArray }) =>
                     or(eq(e.paidById, userId), inArray(e.id, participantExpenseIds)),
-                with: { participants: true, paidBy: true },
+                with: {
+                    participants: {
+                        with: {
+                            user: { columns: { id: true, name: true, email: true, image: true } },
+                        },
+                    },
+                    paidBy: true,
+                },
             }),
             db.query.settlements.findMany({
                 where: (s, { or, eq }) => or(eq(s.fromUserId, userId), eq(s.toUserId, userId)),
@@ -41,7 +48,7 @@ export default async function friendRoutes(server: FastifyInstance) {
         const balanceMap = new Map(balances.map((b) => [b.userId, b.amount]));
 
         return allFriendships.map((f) => {
-            const friend = f.user1Id === userId ? f.user1 : f.user2;
+            const friend = f.user1Id === userId ? f.user2 : f.user1;
             return { ...friend, balance: balanceMap.get(friend.id) ?? 0 };
         });
     });

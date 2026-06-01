@@ -17,7 +17,14 @@ export default async function balanceRoutes(server: FastifyInstance) {
             db.query.expenses.findMany({
                 where: (e, { or, eq, inArray }) =>
                     or(eq(e.paidById, userId), inArray(e.id, participantExpenseIds)),
-                with: { participants: true, paidBy: true },
+                with: {
+                    participants: {
+                        with: {
+                            user: { columns: { id: true, name: true, email: true, image: true } },
+                        },
+                    },
+                    paidBy: true,
+                },
             }),
             db.query.settlements.findMany({
                 where: (s, { or, eq }) => or(eq(s.fromUserId, userId), eq(s.toUserId, userId)),
